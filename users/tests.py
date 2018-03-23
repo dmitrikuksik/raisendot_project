@@ -19,6 +19,14 @@ class SerializerTest(TestCase):
         token = Token.objects.get(user=user)
         self.assertEqual(token.key,request.data['token'])
 
+    def test_login_wrong(self):
+        user = User.objects.create()
+        user.email = 'olek@mail.pl'
+        user.set_password('haslo')
+        user.save()
+        request = self.client.post('/login/',{'email':user.email,'password': 'hslo'})
+        self.assertEqual(request.status_code, 401)
+
     def test_registration(self):
         request = self.client.post('/register/',{'email':'olek@mail.pl','username':'olek','password':'haslo','password2':'haslo'})
         user = User.objects.get(email = 'olek@mail.pl')

@@ -30,8 +30,13 @@ class UserRegistration(APIView):
         serializer = UserRegistrationSerializer(data = request.POST)
         if serializer.is_valid(raise_exception=True):
             new_user = serializer.save()
-            token = Token.objects.create(user=new_user)
-            return Response({'token':token.key})
+            auth_user = authenticate(email=new_user.email,password=request.data['password'])
+            if auth_user:
+                login(request,auth_user)
+                token = Token.objects.create(user=auth_user)
+                return Response({'token':token.key})
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 class UserLogin(APIView):
@@ -41,11 +46,15 @@ class UserLogin(APIView):
 
     def post(self, request, format='JSON'):
         serializer = UserSerializer(data = request.POST)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             auth_user = authenticate(email=serializer.data['email'],password=serializer.data['password'])
-            login(request,auth_user)
-            token = Token.objects.get_or_create(user=auth_user)
-            return Response({'token':token[0].key})
+            if auth_user:
+                login(request,auth_user)
+                token = Token.objects.get_or_create(user=auth_user)
+                return Response({'token':token[0].key})
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 class UserMe(APIView):
